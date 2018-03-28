@@ -43,6 +43,13 @@ public:
   std::chrono::milliseconds RequestTimeoutInMilliseconds;
   HeartbeaterContainer *heartbeatMap;
   int Retries;
+  static Heartbeater &getInstance() {
+    static Heartbeater instance;
+    return instance;
+  }
+  Heartbeater(Heartbeater const&) = delete;
+  void operator=(Heartbeater const&) = delete;
+
 
 private:
   void doSend(Heartbeat beat);
