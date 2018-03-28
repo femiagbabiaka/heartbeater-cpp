@@ -13,11 +13,12 @@ HeartbeaterContainer::HeartbeaterContainer(void) {
   this->heartbeaterMap = heartbeaterMap;
 }
 
-void HeartbeaterContainer::lockContainer() { 
+void HeartbeaterContainer::lockContainer() {
   absl::MutexLock l(this->mapMutex);
 }
 
 void HeartbeaterContainer::addHeartbeat(std::string key, Heartbeat *value) {
+  this->lockContainer();
   this->heartbeaterMap->emplace(key, *value);
 }
 
@@ -34,15 +35,16 @@ Heartbeater::Heartbeater(
 }
 
 void Heartbeater::sendHeartbeat(std::string ServiceName) {
-  this->heartbeatMap->lockContainer();
   Heartbeat *heartbeatToSend = new Heartbeat(ServiceName, this->Hostname, 0);
   this->heartbeatMap->addHeartbeat(ServiceName, heartbeatToSend);
 }
 
+/**
 void Heartbeater::dumpHeartbeats() {
   for (auto item : *this->heartbeatMap->heartbeaterMap) {
     std::cout << " " << item.first << " " << std::endl;
   }
 }
+*/
 
 } // namespace Heartbeater
