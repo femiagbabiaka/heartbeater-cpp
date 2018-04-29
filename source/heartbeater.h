@@ -1,15 +1,17 @@
 #ifndef HEARTBEATER_CPP_LIBRARY_H
 #define HEARTBEATER_CPP_LIBRARY_H
 
-#include "absl/synchronization/mutex.h"
 #include <chrono>
+#include <memory>
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <mutex>
+#include <shared_mutex>
 
 namespace Heartbeater {
 class Heartbeat {
-public:
+ public:
   Heartbeat(std::string ServiceName, std::string Hostname, int SecondsBehind);
   std::string ServiceName;
   std::string Hostname;
@@ -17,19 +19,19 @@ public:
 };
 
 class HeartbeaterContainer {
-public:
+ public:
   HeartbeaterContainer();
   void lockContainer();
   void unlockContainer();
-  void addHeartbeat(std::string key, Heartbeat *value);
-  std::unordered_map<std::string, Heartbeat> *heartbeaterMap;
+  void addHeartbeat(std::string key, std::shared_ptr<Heartbeat> value);
+  std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Heartbeat>>> heartbeaterMap;
 
-private:
-  absl::Mutex *mapMutex;
+ private:
+  std::mutex _mutex;
 };
 
 class Heartbeater {
-public:
+ public:
   Heartbeater(std::string Hostname, std::string HeartbeaterEndpoint,
               std::chrono::seconds IntervalBetweenHeartbeatsInSeconds,
               std::chrono::milliseconds RequestTimeoutInMilliseconds,
@@ -41,17 +43,9 @@ public:
   std::string HeartbeaterEndpoint;
   std::chrono::seconds IntervalBetweenHeartbeatsInSeconds;
   std::chrono::milliseconds RequestTimeoutInMilliseconds;
-  HeartbeaterContainer *heartbeatMap;
+  std::shared_ptr<HeartbeaterContainer> heartbeatMap;
   int Retries;
-  static Heartbeater &getInstance() {
-    static Heartbeater instance;
-    return instance;
-  }
-  Heartbeater(Heartbeater const&) = delete;
-  void operator=(Heartbeater const&) = delete;
-
-
-private:
+ private:
   void doSend(Heartbeat beat);
   void sendAll();
   void startHeartBeater();
