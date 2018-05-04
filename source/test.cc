@@ -7,6 +7,7 @@ int main() {
   myHeartbeater.sendHeartbeat("test1");
   myHeartbeater.sendHeartbeat("test2");
   myHeartbeater.sendHeartbeat("test3");
+  myHeartbeater.sendSecondsBehind("test4", 5);
   myHeartbeater.dumpHeartbeats();
   return 0;
 }

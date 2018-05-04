@@ -21,10 +21,8 @@ class Heartbeat {
 class HeartbeaterContainer {
  public:
   HeartbeaterContainer();
-  void lockContainer();
-  void unlockContainer();
-  void addHeartbeat(std::string key, std::shared_ptr<Heartbeat> value);
-  std::shared_ptr<std::unordered_map<std::string, std::shared_ptr<Heartbeat>>> heartbeaterMap;
+  void addHeartbeat(std::string key, Heartbeat value);
+  std::shared_ptr<std::unordered_map<std::string, Heartbeat>> heartbeaterMap;
 
  private:
   std::mutex _mutex;
@@ -38,12 +36,12 @@ class Heartbeater {
               int Retries);
   void sendHeartbeat(std::string ServiceName);
   void sendSecondsBehind(std::string ServiceName, int SecondsBehind);
-  void dumpHeartbeats();
+  void dumpHeartbeats() noexcept;
   std::string Hostname;
   std::string HeartbeaterEndpoint;
   std::chrono::seconds IntervalBetweenHeartbeatsInSeconds;
   std::chrono::milliseconds RequestTimeoutInMilliseconds;
-  std::shared_ptr<HeartbeaterContainer> heartbeatMap;
+  std::unique_ptr<HeartbeaterContainer> heartbeatMap;
   int Retries;
  private:
   void doSend(Heartbeat beat);

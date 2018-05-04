@@ -9,10 +9,10 @@ Heartbeat::Heartbeat(std::string ServiceName, std::string Hostname,
 }
 
 HeartbeaterContainer::HeartbeaterContainer(void) {
-  this->heartbeaterMap = std::make_shared<std::unordered_map<std::string, std::shared_ptr<Heartbeat>>>();
+  this->heartbeaterMap = std::make_shared<std::unordered_map<std::string, Heartbeat>>();
 }
 
-void HeartbeaterContainer::addHeartbeat(std::string const key, std::shared_ptr<Heartbeat> value) {
+void HeartbeaterContainer::addHeartbeat(std::string const key, Heartbeat value) {
   std::lock_guard<std::mutex> guard(_mutex);
   this->heartbeaterMap->emplace(key, value);
 }
@@ -26,19 +26,22 @@ Heartbeater::Heartbeater(
   this->IntervalBetweenHeartbeatsInSeconds = IntervalBetweenHeartbeatsInSeconds;
   this->RequestTimeoutInMilliseconds = RequestTimeoutInMilliseconds;
   this->Retries = Retries;
-  this->heartbeatMap = std::make_shared<HeartbeaterContainer>();
+  this->heartbeatMap = std::unique_ptr<HeartbeaterContainer>( new HeartbeaterContainer() );
 }
 
 void Heartbeater::sendHeartbeat(std::string ServiceName) {
-  std::shared_ptr<Heartbeat> heartbeatToSend = std::make_shared<Heartbeat>(ServiceName, this->Hostname, 0);
+  Heartbeat heartbeatToSend = Heartbeat(ServiceName, this->Hostname, 0);
   this->heartbeatMap->addHeartbeat(ServiceName, heartbeatToSend);
 }
 
-void Heartbeater::dumpHeartbeats() {
+void Heartbeater::dumpHeartbeats() noexcept {
   for (auto item : *this->heartbeatMap->heartbeaterMap) {
     std::cout << " " << item.first << " " << std::endl;
-    std::cout << " " << item.second << " " << std::endl;
   }
+}
+void Heartbeater::sendSecondsBehind(std::string ServiceName, int SecondsBehind) {
+  Heartbeat heartbeatToSend = Heartbeat(ServiceName, this->Hostname, SecondsBehind);
+  this->heartbeatMap->addHeartbeat(ServiceName, heartbeatToSend);
 }
 
 } // namespace Heartbeater
