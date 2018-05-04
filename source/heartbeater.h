@@ -8,10 +8,11 @@
 #include <unordered_map>
 #include <mutex>
 #include <shared_mutex>
+#include <cpr/cpr.h>
 
 namespace Heartbeater {
 class Heartbeat {
- public:
+public:
   Heartbeat(std::string ServiceName, std::string Hostname, int SecondsBehind);
   std::string ServiceName;
   std::string Hostname;
@@ -19,17 +20,18 @@ class Heartbeat {
 };
 
 class HeartbeaterContainer {
- public:
+public:
   HeartbeaterContainer();
   void addHeartbeat(std::string key, Heartbeat value);
+  std::unordered_map<std::string, Heartbeat> reset();
   std::shared_ptr<std::unordered_map<std::string, Heartbeat>> heartbeaterMap;
 
- private:
+private:
   std::mutex _mutex;
 };
 
 class Heartbeater {
- public:
+public:
   Heartbeater(std::string Hostname, std::string HeartbeaterEndpoint,
               std::chrono::seconds IntervalBetweenHeartbeatsInSeconds,
               std::chrono::milliseconds RequestTimeoutInMilliseconds,
@@ -43,7 +45,7 @@ class Heartbeater {
   std::chrono::milliseconds RequestTimeoutInMilliseconds;
   std::unique_ptr<HeartbeaterContainer> heartbeatMap;
   int Retries;
- private:
+private:
   void doSend(Heartbeat beat);
   void sendAll();
   void startHeartBeater();
