@@ -3,23 +3,23 @@
 namespace Heartbeater {
 Heartbeat::Heartbeat(std::string ServiceName, std::string Hostname,
                      int SecondsBehind) {
-  this->ServiceName = ServiceName;
-  this->Hostname = Hostname;
+  this->ServiceName = std::move(ServiceName);
+  this->Hostname = std::move(Hostname);
   this->SecondsBehind = SecondsBehind;
 }
 
-HeartbeaterContainer::HeartbeaterContainer(void) {
+HeartbeaterContainer::HeartbeaterContainer() {
   this->heartbeaterMap = std::make_shared<std::unordered_map<std::string, Heartbeat>>();
 }
 
 void HeartbeaterContainer::addHeartbeat(std::string const key, Heartbeat value) {
-  std::lock_guard<std::mutex> guard(_mutex);
-  this->heartbeaterMap->emplace(key, value);
+  heartbeaterMap->emplace(key, value);
 }
 std::unordered_map<std::string, Heartbeat> HeartbeaterContainer::reset() {
+  std::lock_guard<std::mutex> guard(_mutex);
   // Make copy of shared heartbeaterMap and then clear the original.
-  std::unordered_map<std::string, Heartbeat> heartbeaterMapCopy = *this->heartbeaterMap;
-  this->heartbeaterMap->clear();
+  std::unordered_map<std::string, Heartbeat> heartbeaterMapCopy = *heartbeaterMap;
+  heartbeaterMap->clear();
 
   return heartbeaterMapCopy;
 }
@@ -27,41 +27,74 @@ std::unordered_map<std::string, Heartbeat> HeartbeaterContainer::reset() {
 Heartbeater::Heartbeater(
     std::string Hostname, std::string HeartbeaterEndpoint,
     std::chrono::seconds IntervalBetweenHeartbeatsInSeconds,
-    std::chrono::milliseconds RequestTimeoutInMilliseconds, int Retries) {
-  this->Hostname = Hostname;
-  this->HeartbeaterEndpoint = HeartbeaterEndpoint;
+    int RequestTimeoutInMilliseconds, int Retries) {
+  this->Hostname = std::move(Hostname);
+  this->HeartbeaterEndpoint = std::move(HeartbeaterEndpoint);
   this->IntervalBetweenHeartbeatsInSeconds = IntervalBetweenHeartbeatsInSeconds;
   this->RequestTimeoutInMilliseconds = RequestTimeoutInMilliseconds;
   this->Retries = Retries;
   this->heartbeatMap = std::unique_ptr<HeartbeaterContainer>(new HeartbeaterContainer());
+
+  startHeartbeater();
 }
 
 void Heartbeater::sendHeartbeat(std::string ServiceName) {
-  Heartbeat heartbeatToSend = Heartbeat(ServiceName, this->Hostname, 0);
-  this->heartbeatMap->addHeartbeat(ServiceName, heartbeatToSend);
+  Heartbeat heartbeatToSend = Heartbeat(ServiceName, Hostname, 0);
+  heartbeatMap->addHeartbeat(ServiceName, heartbeatToSend);
 }
 
 void Heartbeater::dumpHeartbeats() noexcept {
-  for (auto item : *this->heartbeatMap->heartbeaterMap) {
+  for (auto item : *heartbeatMap->heartbeaterMap) {
     std::cout << " " << item.first << " " << std::endl;
   }
 }
 void Heartbeater::sendSecondsBehind(std::string ServiceName, int SecondsBehind) {
-  Heartbeat heartbeatToSend = Heartbeat(ServiceName, this->Hostname, SecondsBehind);
+  Heartbeat heartbeatToSend = Heartbeat(ServiceName, Hostname, SecondsBehind);
   this->heartbeatMap->addHeartbeat(ServiceName, heartbeatToSend);
 }
 void Heartbeater::doSend(Heartbeat beat) {
 
+  std::cout << "sending heartbeat" << std::endl;
+  std::cout << "service: " << beat.ServiceName << std::endl;
+
   auto payload = cpr::Payload{{"service", beat.ServiceName}, {"host", beat.Hostname},
                               {"seconds_behind", std::to_string(beat.SecondsBehind)}};
 
-  cpr::PostAsync(cpr::Url{this->HeartbeaterEndpoint}, cpr::Timeout{this->RequestTimeoutInMilliseconds});
+  auto response = cpr::Post(cpr::Url{HeartbeaterEndpoint}, cpr::Timeout{RequestTimeoutInMilliseconds}, payload);
+
+  std::cout << "response coe: " << response.status_code << std::endl;
 }
 void Heartbeater::sendAll() {
   auto heartbeaterMapCopy = this->heartbeatMap->reset();
 
   for (auto item : heartbeaterMapCopy) {
-    this->doSend(item.second);
+    doSend(item.second);
+  }
+}
+void Heartbeater::startHeartbeater() {
+  if (_execute.load(std::memory_order_acquire)) {
+    stopHeartbeater();
+  }
+
+  _execute.store(true, std::memory_order_release);
+
+  _thread = std::thread([this]() {
+    while (_execute.load(std::memory_order_acquire)) {
+      sendAll();
+      std::this_thread::sleep_for(IntervalBetweenHeartbeatsInSeconds);
+    }
+  });
+}
+void Heartbeater::stopHeartbeater() {
+  _execute.store(false, std::memory_order_release);
+
+  if (_thread.joinable()) {
+    _thread.join();
+  }
+}
+Heartbeater::~Heartbeater() {
+  if (_execute.load(std::memory_order_acquire)) {
+    stopHeartbeater();
   }
 }
 

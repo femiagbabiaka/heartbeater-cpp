@@ -34,21 +34,25 @@ class Heartbeater {
 public:
   Heartbeater(std::string Hostname, std::string HeartbeaterEndpoint,
               std::chrono::seconds IntervalBetweenHeartbeatsInSeconds,
-              std::chrono::milliseconds RequestTimeoutInMilliseconds,
+              int RequestTimeoutInMilliseconds,
               int Retries);
+  ~Heartbeater();
   void sendHeartbeat(std::string ServiceName);
   void sendSecondsBehind(std::string ServiceName, int SecondsBehind);
   void dumpHeartbeats() noexcept;
   std::string Hostname;
   std::string HeartbeaterEndpoint;
   std::chrono::seconds IntervalBetweenHeartbeatsInSeconds;
-  std::chrono::milliseconds RequestTimeoutInMilliseconds;
+  int RequestTimeoutInMilliseconds;
   std::unique_ptr<HeartbeaterContainer> heartbeatMap;
   int Retries;
 private:
   void doSend(Heartbeat beat);
   void sendAll();
-  void startHeartBeater();
+  void startHeartbeater();
+  void stopHeartbeater();
+  std::atomic<bool> _execute;
+  std::thread _thread;
 };
 
 } // namespace Heartbeater
