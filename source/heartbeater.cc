@@ -50,19 +50,14 @@ void Heartbeater::dumpHeartbeats() noexcept {
 }
 void Heartbeater::sendSecondsBehind(std::string ServiceName, int SecondsBehind) {
   Heartbeat heartbeatToSend = Heartbeat(ServiceName, Hostname, SecondsBehind);
-  this->heartbeatMap->addHeartbeat(ServiceName, heartbeatToSend);
+  heartbeatMap->addHeartbeat(ServiceName, heartbeatToSend);
 }
 void Heartbeater::doSend(Heartbeat beat) {
-
-  std::cout << "sending heartbeat" << std::endl;
-  std::cout << "service: " << beat.ServiceName << std::endl;
 
   auto payload = cpr::Payload{{"service", beat.ServiceName}, {"host", beat.Hostname},
                               {"seconds_behind", std::to_string(beat.SecondsBehind)}};
 
   auto response = cpr::Post(cpr::Url{HeartbeaterEndpoint}, cpr::Timeout{RequestTimeoutInMilliseconds}, payload);
-
-  std::cout << "response coe: " << response.status_code << std::endl;
 }
 void Heartbeater::sendAll() {
   auto heartbeaterMapCopy = this->heartbeatMap->reset();
