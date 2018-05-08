@@ -15,6 +15,7 @@ HeartbeaterContainer::HeartbeaterContainer() {
 void HeartbeaterContainer::addHeartbeat(std::string const key, Heartbeat value) {
   heartbeaterMap->emplace(key, value);
 }
+
 std::unordered_map<std::string, Heartbeat> HeartbeaterContainer::reset() {
   std::lock_guard<std::mutex> guard(_mutex);
   // Make copy of shared heartbeaterMap and then clear the original.
@@ -43,11 +44,6 @@ void Heartbeater::sendHeartbeat(std::string ServiceName) {
   heartbeatMap->addHeartbeat(ServiceName, heartbeatToSend);
 }
 
-void Heartbeater::dumpHeartbeats() noexcept {
-  for (auto item : *heartbeatMap->heartbeaterMap) {
-    std::cout << " " << item.first << " " << std::endl;
-  }
-}
 void Heartbeater::sendSecondsBehind(std::string ServiceName, int SecondsBehind) {
   Heartbeat heartbeatToSend = Heartbeat(ServiceName, Hostname, SecondsBehind);
   heartbeatMap->addHeartbeat(ServiceName, heartbeatToSend);

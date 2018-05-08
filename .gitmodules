@@ -1,3 +1,6 @@
 [submodule "include/cpr"]
 	path = include/cpr
 	url = git@github.com:whoshuu/cpr.git
+[submodule "include/googletest"]
+	path = include/googletest
+	url = git@github.com:google/googletest

@@ -39,7 +39,6 @@ public:
   ~Heartbeater();
   void sendHeartbeat(std::string ServiceName);
   void sendSecondsBehind(std::string ServiceName, int SecondsBehind);
-  void dumpHeartbeats() noexcept;
   std::string Hostname;
   std::string HeartbeaterEndpoint;
   std::chrono::seconds IntervalBetweenHeartbeatsInSeconds;
