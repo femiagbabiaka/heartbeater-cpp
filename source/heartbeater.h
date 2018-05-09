@@ -8,12 +8,12 @@
 #include <unordered_map>
 #include <mutex>
 #include <shared_mutex>
-#include <cpr/cpr.h>
+#include <thread>
 
 namespace Heartbeater {
 class Heartbeat {
 public:
-  Heartbeat(std::string ServiceName, std::string Hostname, int SecondsBehind);
+  Heartbeat(std::string const &ServiceName, std::string const &Hostname, int const &SecondsBehind);
   std::string ServiceName;
   std::string Hostname;
   int SecondsBehind;
@@ -22,7 +22,7 @@ public:
 class HeartbeaterContainer {
 public:
   HeartbeaterContainer();
-  void addHeartbeat(std::string key, Heartbeat value);
+  void addHeartbeat(std::string const &key, Heartbeat const &value);
   std::unordered_map<std::string, Heartbeat> reset();
   std::shared_ptr<std::unordered_map<std::string, Heartbeat>> heartbeaterMap;
 
@@ -32,13 +32,13 @@ private:
 
 class Heartbeater {
 public:
-  Heartbeater(std::string Hostname, std::string HeartbeaterEndpoint,
-              std::chrono::seconds IntervalBetweenHeartbeatsInSeconds,
-              int RequestTimeoutInMilliseconds,
-              int Retries);
+  Heartbeater(std::string const &Hostname, std::string const &HeartbeaterEndpoint,
+              std::chrono::seconds const &IntervalBetweenHeartbeatsInSeconds,
+              int const &RequestTimeoutInMilliseconds,
+              int const &Retries);
   ~Heartbeater();
-  void sendHeartbeat(std::string ServiceName);
-  void sendSecondsBehind(std::string ServiceName, int SecondsBehind);
+  void sendHeartbeat(std::string const &ServiceName);
+  void sendSecondsBehind(std::string const &ServiceName, int const &SecondsBehind);
   std::string Hostname;
   std::string HeartbeaterEndpoint;
   std::chrono::seconds IntervalBetweenHeartbeatsInSeconds;
@@ -46,7 +46,7 @@ public:
   std::unique_ptr<HeartbeaterContainer> heartbeatMap;
   int Retries;
 private:
-  void doSend(Heartbeat beat);
+  void doSend(Heartbeat const &beat);
   void sendAll();
   void startHeartbeater();
   void stopHeartbeater();

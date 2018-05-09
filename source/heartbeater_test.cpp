@@ -25,6 +25,8 @@ TEST(AddHeartbeats, AddHeartbeats_CanAddHeartbeat_Test) {
   ));
 
   myHeartbeater->sendHeartbeat("test_service");
+  myHeartbeater->sendHeartbeat("test_service2");
 
   ASSERT_EQ(myHeartbeater->heartbeatMap->heartbeaterMap->count("test_service"), 1);
+  ASSERT_EQ(myHeartbeater->heartbeatMap->heartbeaterMap->count("test_service2"), 1);
 }

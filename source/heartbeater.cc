@@ -1,10 +1,12 @@
 #include "heartbeater.h"
 
+#include <cpr/cpr.h>
+
 namespace Heartbeater {
-Heartbeat::Heartbeat(std::string ServiceName, std::string Hostname,
-                     int SecondsBehind) {
-  this->ServiceName = std::move(ServiceName);
-  this->Hostname = std::move(Hostname);
+Heartbeat::Heartbeat(std::string const &ServiceName, const std::string &Hostname,
+                     int const &SecondsBehind) {
+  this->ServiceName = ServiceName;
+  this->Hostname = Hostname;
   this->SecondsBehind = SecondsBehind;
 }
 
@@ -12,7 +14,7 @@ HeartbeaterContainer::HeartbeaterContainer() {
   this->heartbeaterMap = std::make_shared<std::unordered_map<std::string, Heartbeat>>();
 }
 
-void HeartbeaterContainer::addHeartbeat(std::string const key, Heartbeat value) {
+void HeartbeaterContainer::addHeartbeat(std::string const &key, Heartbeat const &value) {
   heartbeaterMap->emplace(key, value);
 }
 
@@ -26,11 +28,11 @@ std::unordered_map<std::string, Heartbeat> HeartbeaterContainer::reset() {
 }
 
 Heartbeater::Heartbeater(
-    std::string Hostname, std::string HeartbeaterEndpoint,
-    std::chrono::seconds IntervalBetweenHeartbeatsInSeconds,
-    int RequestTimeoutInMilliseconds, int Retries) {
-  this->Hostname = std::move(Hostname);
-  this->HeartbeaterEndpoint = std::move(HeartbeaterEndpoint);
+    std::string const &Hostname, std::string const &HeartbeaterEndpoint,
+    std::chrono::seconds const &IntervalBetweenHeartbeatsInSeconds,
+    int const &RequestTimeoutInMilliseconds, int const &Retries) {
+  this->Hostname = Hostname;
+  this->HeartbeaterEndpoint = HeartbeaterEndpoint;
   this->IntervalBetweenHeartbeatsInSeconds = IntervalBetweenHeartbeatsInSeconds;
   this->RequestTimeoutInMilliseconds = RequestTimeoutInMilliseconds;
   this->Retries = Retries;
@@ -39,16 +41,16 @@ Heartbeater::Heartbeater(
   startHeartbeater();
 }
 
-void Heartbeater::sendHeartbeat(std::string ServiceName) {
+void Heartbeater::sendHeartbeat(std::string const &ServiceName) {
   Heartbeat heartbeatToSend = Heartbeat(ServiceName, Hostname, 0);
   heartbeatMap->addHeartbeat(ServiceName, heartbeatToSend);
 }
 
-void Heartbeater::sendSecondsBehind(std::string ServiceName, int SecondsBehind) {
+void Heartbeater::sendSecondsBehind(std::string const &ServiceName, int const &SecondsBehind) {
   Heartbeat heartbeatToSend = Heartbeat(ServiceName, Hostname, SecondsBehind);
   heartbeatMap->addHeartbeat(ServiceName, heartbeatToSend);
 }
-void Heartbeater::doSend(Heartbeat beat) {
+void Heartbeater::doSend(Heartbeat const &beat) {
 
   auto payload = cpr::Payload{{"service", beat.ServiceName}, {"host", beat.Hostname},
                               {"seconds_behind", std::to_string(beat.SecondsBehind)}};
