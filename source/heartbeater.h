@@ -9,6 +9,7 @@
 #include <mutex>
 #include <shared_mutex>
 #include <thread>
+#include <atomic>
 
 namespace Heartbeater {
 class Heartbeat {
